@@ -1,0 +1,16 @@
+node_modules/
+.next/
+dist/
+.vercel/
+.turbo/
+coverage/
+*.log
+.DS_Store
+.env
+.env.local
+.env.production
+.env.development
+backend/.env
+frontend/.env
+sdk/.env
+

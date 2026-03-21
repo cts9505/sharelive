@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Build
+dist/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Database
+*.sqlite
+*.db
+
+# Misc
+.DS_Store
+.idea/
+.vscode/
+
+# Prisma
+prisma/migrations/*.sql

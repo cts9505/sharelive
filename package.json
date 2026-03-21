@@ -1,0 +1,13 @@
+{
+  "name": "sharelive",
+  "private": true,
+  "scripts": {
+    "build": "npm run build:backend && npm run build:frontend && npm run build:sdk",
+    "build:backend": "npm --prefix backend run build",
+    "build:frontend": "npm --prefix frontend run build",
+    "build:sdk": "npm --prefix sdk run build",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:sdk": "npm --prefix sdk run dev"
+  }
+}

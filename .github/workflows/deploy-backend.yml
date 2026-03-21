@@ -1,0 +1,112 @@
+name: Deploy Backend to EC2
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend.yml'
+
+concurrency:
+  group: deploy-backend-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build backend
+        run: npm run build
+
+      - name: Deploy to EC2
+        working-directory: /Users/chaitanyashinde/Downloads/Sharelive
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          # Setup SSH
+          mkdir -p ~/.ssh
+          echo "$EC2_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts
+
+          # Create deployment package
+          cd backend
+          tar -czf ../backend.tar.gz dist package.json package-lock.json prisma
+
+          # Copy to EC2
+          scp ../backend.tar.gz $EC2_USER@$EC2_HOST:/home/$EC2_USER/
+
+          # Deploy on EC2
+          ssh $EC2_USER@$EC2_HOST << 'EOF'
+            set -e
+
+            DEPLOY_DIR="/home/$(whoami)/sharelive-backend"
+            mkdir -p "$DEPLOY_DIR"
+            cd "$DEPLOY_DIR"
+
+            # Backup current version
+            if [ -d "dist" ]; then
+              tar -czf backup-$(date +%Y%m%d-%H%M%S).tar.gz dist
+            fi
+
+            # Extract new version
+            tar -xzf ~/backend.tar.gz -C .
+
+            # Install dependencies required for runtime and migrations
+            npm ci
+
+            # Run database migrations
+            npx prisma generate
+            npx prisma migrate deploy
+
+            # Restart PM2
+            pm2 restart sharelive-backend || pm2 start dist/server.js --name sharelive-backend
+
+            # Cleanup
+            rm ~/backend.tar.gz
+
+            # Keep only last 5 backups
+            ls -t backup-*.tar.gz | tail -n +6 | xargs -r rm
+          EOF
+
+      - name: Verify deployment
+        working-directory: /Users/chaitanyashinde/Downloads/Sharelive
+        env:
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+        run: |
+          sleep 10
+          response=$(curl -s -o /dev/null -w "%{http_code}" $BACKEND_URL/health)
+          if [ $response -eq 200 ]; then
+            echo "✅ Deployment successful!"
+          else
+            echo "❌ Deployment failed - health check returned $response"
+            exit 1
+          fi
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "🚨 Deployment failed! Check the logs."

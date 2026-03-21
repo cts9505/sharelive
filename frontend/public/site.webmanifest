@@ -1,0 +1,23 @@
+{
+  "name": "ShareLive",
+  "short_name": "ShareLive",
+  "description": "Branded subdomains and localhost tunnels for developers. Connect deployed apps or expose local ports with ShareLive.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020817",
+  "theme_color": "#22d3ee",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
