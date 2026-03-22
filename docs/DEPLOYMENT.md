@@ -115,9 +115,23 @@ On every push to `main` affecting `backend/**`, it:
 1. installs backend dependencies
 2. builds `backend/dist`
 3. uploads a deployment tarball to EC2
-4. runs `npm ci`, `npx prisma generate`, and `npx prisma migrate deploy`
-5. restarts `sharelive-backend` with PM2
-6. verifies `GET /health`
+4. extracts it into `/home/<user>/sharelive-backend/current`
+5. links `/home/<user>/sharelive-backend/.env` into the release
+6. runs `npm ci`, `npx prisma generate`, and `npx prisma migrate deploy`
+7. restarts `sharelive-backend` with PM2
+8. keeps release backups and verifies `GET /health`
+
+The EC2 directory layout after the first deploy looks like:
+
+```text
+/home/<user>/sharelive-backend
+  .env
+  current/
+    dist/
+    prisma/
+    package.json
+    package-lock.json
+```
 
 ### Nginx reverse proxy example
 

@@ -6,6 +6,21 @@ import { config } from "../config";
 import { CouponError, CouponService } from "../services/coupon";
 import { authenticate, AuthenticatedRequest } from "./authenticate";
 
+function isRazorpayAuthError(error: unknown) {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const maybeError = error as {
+    statusCode?: number;
+    error?: { code?: string; description?: string };
+  };
+
+  return maybeError.statusCode === 401
+    || maybeError.error?.code === "BAD_REQUEST_ERROR"
+    || maybeError.error?.description === "Authentication failed";
+}
+
 async function getRazorpayClient() {
   if (!config.RAZORPAY_KEY_ID || !config.RAZORPAY_KEY_SECRET) {
     return null;
@@ -44,6 +59,12 @@ export async function paymentsRoutes(fastify: FastifyInstance) {
       }
       if (error instanceof z.ZodError) {
         return reply.status(400).send({ error: error.issues[0].message });
+      }
+      if (isRazorpayAuthError(error)) {
+        fastify.log.error({ error }, "Razorpay authentication failed while creating order");
+        return reply.status(502).send({
+          error: "Payment gateway authentication failed. Please verify Razorpay credentials.",
+        });
       }
       fastify.log.error(error);
       return reply.status(500).send({ error: "Internal server error" });
@@ -233,6 +254,12 @@ export async function paymentsRoutes(fastify: FastifyInstance) {
     } catch (error) {
       if (error instanceof z.ZodError) {
         return reply.status(400).send({ error: error.issues[0].message });
+      }
+      if (isRazorpayAuthError(error)) {
+        fastify.log.error({ error }, "Razorpay authentication failed while verifying payment");
+        return reply.status(502).send({
+          error: "Payment gateway authentication failed. Please verify Razorpay credentials.",
+        });
       }
       fastify.log.error(error);
       return reply.status(500).send({ error: "Internal server error" });

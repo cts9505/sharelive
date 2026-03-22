@@ -47,6 +47,8 @@ model User {
   projects              Project[]
   payments              Payment[]
   verificationTokens    VerificationToken[]
+  feedbackSubmissions   FeedbackSubmission[]
+  bugReports            BugReport[]
 
   @@map("users")
 }
@@ -197,6 +199,41 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
+model FeedbackSubmission {
+  id         String   @id @default(uuid()) @map("id")
+  email      String?  @map("email")
+  message    String   @map("message") @db.Text
+  sourcePage String?  @map("source_page")
+  userAgent  String?  @map("user_agent")
+  ipAddress  String?  @map("ip_address")
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId     String?  @map("user_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([email])
+  @@index([userId])
+  @@map("feedback_submissions")
+}
+
+model BugReport {
+  id         String   @id @default(uuid()) @map("id")
+  email      String?  @map("email")
+  summary    String   @map("summary")
+  details    String   @map("details") @db.Text
+  sourcePage String?  @map("source_page")
+  userAgent  String?  @map("user_agent")
+  ipAddress  String?  @map("ip_address")
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId     String?  @map("user_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([email])
+  @@index([userId])
+  @@map("bug_reports")
+}
+
 enum PaymentStatus {
   pending
   processing
@@ -211,4 +248,3 @@ enum VerificationType {
   phone
   password_reset
 }
-

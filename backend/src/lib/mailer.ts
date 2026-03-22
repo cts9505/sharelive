@@ -13,7 +13,7 @@ async function getTransporter() {
       return nodemailer.default.createTransport({
         host: config.SMTP_HOST,
         port: config.SMTP_PORT,
-        secure: false,
+        secure: config.SMTP_SECURE,
         auth: {
           user: config.SMTP_USER,
           pass: config.SMTP_PASS,
@@ -38,7 +38,7 @@ export async function sendMail(options: {
   }
 
   await transporter.sendMail({
-    from: `"ShareLive" <${config.SMTP_USER}>`,
+    from: config.SMTP_FROM || `"ShareLive" <${config.SMTP_USER}>`,
     ...options,
   });
 

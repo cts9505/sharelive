@@ -94,6 +94,11 @@ export function startClient(port: number, options: ExposeOptions) {
       if (msg.authenticated && email) {
         console.log(`🔐 Authenticated tunnel for ${email}`);
       }
+      if (msg.expiresAt) {
+        console.log(`⏳ Expires at: ${msg.expiresAt}`);
+      } else {
+        console.log(`♾️ No automatic tunnel expiry configured on the server.`);
+      }
       console.log(`\n⚡ Tunnel will stay alive even if local port ${port} is not running yet.`);
       console.log(`   Start your server on port ${port} whenever you're ready!\n`);
       if (verbose) {

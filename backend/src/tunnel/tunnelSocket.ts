@@ -36,7 +36,9 @@ export async function tunnelSocket(fastify: FastifyInstance) {
       }
 
       const now = new Date();
-      const expiresAt = new Date(now.getTime() + config.MAX_TUNNEL_LIFETIME);
+      const expiresAt = config.MAX_TUNNEL_LIFETIME > 0
+        ? new Date(now.getTime() + config.MAX_TUNNEL_LIFETIME)
+        : undefined;
 
       tunnelManager.register({
         id,
@@ -56,11 +58,15 @@ export async function tunnelSocket(fastify: FastifyInstance) {
         subdomain,
         authenticated,
         accessToken, // Send token to client if enabled
-        expiresAt: expiresAt.toISOString(),
+        expiresAt: expiresAt?.toISOString(),
       }));
 
       registered = true;
-      console.log(`[TUNNEL] New tunnel created: ${subdomain}.sharelive.site (expires: ${expiresAt.toISOString()})`);
+      console.log(
+        expiresAt
+          ? `[TUNNEL] New tunnel created: ${subdomain}.sharelive.site (expires: ${expiresAt.toISOString()})`
+          : `[TUNNEL] New tunnel created: ${subdomain}.sharelive.site (no automatic expiry)`
+      );
     };
 
     // Listen for custom subdomain registration

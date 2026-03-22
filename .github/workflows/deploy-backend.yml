@@ -40,7 +40,6 @@ jobs:
         run: npm run build
 
       - name: Deploy to EC2
-        working-directory: /Users/chaitanyashinde/Downloads/Sharelive
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USER: ${{ secrets.EC2_USER }}
@@ -64,26 +63,43 @@ jobs:
             set -e
 
             DEPLOY_DIR="/home/$(whoami)/sharelive-backend"
+            RELEASE_DIR="$DEPLOY_DIR/current"
             mkdir -p "$DEPLOY_DIR"
+            mkdir -p "$RELEASE_DIR"
             cd "$DEPLOY_DIR"
 
             # Backup current version
-            if [ -d "dist" ]; then
-              tar -czf backup-$(date +%Y%m%d-%H%M%S).tar.gz dist
+            if [ -d "$RELEASE_DIR/dist" ]; then
+              tar -czf backup-$(date +%Y%m%d-%H%M%S).tar.gz current
             fi
 
+            # Clear previous release so deleted files don't linger
+            rm -rf "$RELEASE_DIR"
+            mkdir -p "$RELEASE_DIR"
+
             # Extract new version
-            tar -xzf ~/backend.tar.gz -C .
+            tar -xzf ~/backend.tar.gz -C "$RELEASE_DIR"
+
+            cd "$RELEASE_DIR"
 
             # Install dependencies required for runtime and migrations
             npm ci
+
+            # Validate required runtime configuration before restart
+            test -f "$DEPLOY_DIR/.env"
+            grep -q '^DATABASE_URL=' "$DEPLOY_DIR/.env"
+            grep -q '^JWT_SECRET=' "$DEPLOY_DIR/.env"
+
+            # Link shared environment file into the current release
+            ln -sf "$DEPLOY_DIR/.env" .env
 
             # Run database migrations
             npx prisma generate
             npx prisma migrate deploy
 
             # Restart PM2
-            pm2 restart sharelive-backend || pm2 start dist/server.js --name sharelive-backend
+            pm2 restart sharelive-backend --update-env || pm2 start dist/server.js --name sharelive-backend
+            pm2 save
 
             # Cleanup
             rm ~/backend.tar.gz
@@ -93,12 +109,11 @@ jobs:
           EOF
 
       - name: Verify deployment
-        working-directory: /Users/chaitanyashinde/Downloads/Sharelive
         env:
           BACKEND_URL: ${{ secrets.BACKEND_URL }}
         run: |
           sleep 10
-          response=$(curl -s -o /dev/null -w "%{http_code}" $BACKEND_URL/health)
+          response=$(curl -fsS -o /dev/null -w "%{http_code}" "$BACKEND_URL/health" || true)
           if [ $response -eq 200 ]; then
             echo "✅ Deployment successful!"
           else

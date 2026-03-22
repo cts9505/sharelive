@@ -46,7 +46,11 @@ export const RegisterForm = () => {
       }
 
       const data = await response.json();
-      toast.success('Account created successfully!');
+      toast.success(
+        data.verificationEmailSent === false
+          ? 'Account created, but verification email could not be sent yet.'
+          : 'Account created. Please check your email to verify your account.'
+      );
       
       // Registration successful - redirect to login
       setTimeout(() => router.push('/login'), 500);

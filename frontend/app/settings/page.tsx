@@ -1,6 +1,6 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
@@ -56,7 +56,10 @@ export default function SettingsPage() {
     if (status === 'unauthenticated') {
       router.push('/login');
     }
-  }, [status, router]);
+    if (status === 'authenticated' && !session?.accessToken) {
+      void signOut({ callbackUrl: '/login' });
+    }
+  }, [status, session?.accessToken, router]);
 
   useEffect(() => {
     if (session?.accessToken) {
@@ -71,6 +74,12 @@ export default function SettingsPage() {
           Authorization: `Bearer ${session?.accessToken}`,
         },
       });
+
+      if (response.status === 401) {
+        toast.error('Your session expired. Please log in again.');
+        await signOut({ callbackUrl: '/login' });
+        return;
+      }
 
       if (!response.ok) throw new Error('Failed to fetch profile');
 
@@ -111,6 +120,12 @@ export default function SettingsPage() {
         },
         body: JSON.stringify(formData),
       });
+
+      if (response.status === 401) {
+        toast.error('Your session expired. Please log in again.');
+        await signOut({ callbackUrl: '/login' });
+        return;
+      }
 
       if (!response.ok) {
         const error = await response.json();

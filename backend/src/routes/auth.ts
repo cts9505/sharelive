@@ -51,7 +51,20 @@ export async function authRoutes(fastify: FastifyInstance) {
           parsed.data.email,
           parsed.data.password
         );
-        return reply.status(201).send(result);
+
+        let verificationEmailSent = false;
+
+        try {
+          await verificationService.sendEmailVerification(result.user.id);
+          verificationEmailSent = true;
+        } catch (verificationError) {
+          fastify.log.error(verificationError);
+        }
+
+        return reply.status(201).send({
+          ...result,
+          verificationEmailSent,
+        });
       } catch (error: any) {
         if (error.message === 'Email already registered') {
           return reply.status(409).send({ error: error.message });

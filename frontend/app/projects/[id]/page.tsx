@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import type { Project } from '@/lib/sharelive-types';
 import { redirect } from 'next/navigation';
+import { API_BASE } from '@/lib/api-base';
 import { ProjectHeader } from '../../../components/project-header';
 import { AnalyticsSection } from '../../../components/analytics-section';
 import { ProjectSettings } from '../../../components/project-settings';
@@ -10,9 +11,7 @@ import { PaymentDetailsCard } from '../../../components/payment-details-card';
 import { DeleteProjectCard } from '../../../components/delete-project-card';
 import { getAuthHeaders } from '../../../lib/auth';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080';
-
-async function fetchProject(id: string): Promise<Project | null> {
+async function fetchProject(id: string): Promise<{ project: Project | null; backendUnavailable: boolean }> {
   try {
     const headers = await getAuthHeaders();
     const response = await fetch(`${API_BASE}/api/projects/my`, {
@@ -27,13 +26,17 @@ async function fetchProject(id: string): Promise<Project | null> {
       redirect('/login');
     }
     if (!response.ok) {
-      return null;
+      return { project: null, backendUnavailable: false };
     }
     const data = await response.json();
-    return (data.projects as Project[]).find((project) => project.id === id) ?? null;
+    return {
+      project: (data.projects as Project[]).find((project) => project.id === id) ?? null,
+      backendUnavailable: false,
+    };
   } catch (error) {
-    console.warn('Failed to load project', error);
-    return null;
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.warn(`Failed to load project from API ${API_BASE}: ${message}`);
+    return { project: null, backendUnavailable: true };
   }
 }
 
@@ -43,7 +46,7 @@ interface PageProps {
 
 export default async function ProjectDetailPage({ params }: PageProps) {
   const { id } = await params;
-  const project = await fetchProject(id);
+  const { project, backendUnavailable } = await fetchProject(id);
 
   if (!project) {
     return (
@@ -55,9 +58,13 @@ export default async function ProjectDetailPage({ params }: PageProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-foreground mb-2">Project Not Found</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-2">
+              {backendUnavailable ? 'Backend Unavailable' : 'Project Not Found'}
+            </h2>
             <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-              The project you&apos;re looking for doesn&apos;t exist or you don&apos;t have access to it.
+              {backendUnavailable
+                ? `The frontend could not reach the API at ${API_BASE}. Make sure the backend is running and that NEXT_PUBLIC_API_BASE_URL points to the correct port.`
+                : 'The project you&apos;re looking for doesn&apos;t exist or you don&apos;t have access to it.'}
             </p>
             <a 
               href="/dashboard" 

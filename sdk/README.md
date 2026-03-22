@@ -2,6 +2,11 @@
 
 Command-line tool to expose localhost to the internet via secure tunnels.
 
+## Requirements
+
+- Node.js 20 or newer
+- npm account with publish access
+
 ## 📦 Installation
 
 ```bash
@@ -103,6 +108,28 @@ npm link
 
 # Test
 sharelive --help
+```
+
+## 🚀 Publish to npm
+
+```bash
+# 1. Build the package
+npm run build
+
+# 2. Verify what will be published
+NPM_CONFIG_CACHE=/tmp/sharelive-npm-cache npm pack --dry-run
+
+# 3. Login to npm
+npm login
+
+# 4. Publish
+npm publish
+```
+
+If the `sharelive` package name is already taken on npm, change the package name in `package.json` to a scoped name such as `@your-scope/sharelive` and publish again with:
+
+```bash
+npm publish --access public
 ```
 
 ## 🔌 How It Works

@@ -3,6 +3,8 @@
 import { FormEvent, useState } from 'react';
 import toast from 'react-hot-toast';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080';
+
 export default function FeedbackPage() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
@@ -12,13 +14,33 @@ export default function FeedbackPage() {
     event.preventDefault();
     setLoading(true);
 
-    // Mock submission
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    toast.success('Thank you for your feedback!');
-    setEmail('');
-    setMessage('');
-    setLoading(false);
+    try {
+      const response = await fetch(`${API_BASE}/api/feedback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          message,
+          sourcePage: '/feedback',
+        }),
+      });
+
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(payload?.error ?? 'Could not submit feedback');
+      }
+
+      toast.success('Thank you for your feedback!');
+      setEmail('');
+      setMessage('');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not submit feedback');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -65,5 +87,4 @@ export default function FeedbackPage() {
     </main>
   );
 }
-
 

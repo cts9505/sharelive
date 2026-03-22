@@ -53,7 +53,7 @@ interface Payment {
 
 async function fetchUserProfile() {
   const session = await getSession();
-  if (!session?.user) {
+  if (!session?.user || !session.accessToken) {
     redirect('/login');
   }
 
@@ -86,6 +86,10 @@ async function fetchUserProfile() {
       },
       cache: 'no-store',
     });
+
+    if ([profileResponse.status, projectsResponse.status, paymentsResponse.status].includes(401)) {
+      redirect('/login');
+    }
 
     let profile: UserProfile | null = null;
     let projects: Project[] = [];

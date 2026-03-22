@@ -8,6 +8,7 @@ import { tunnelSocket } from "./tunnel/tunnelSocket";
 import { publicProxy } from "./routes/publicProxy";
 import { analyticsRoutes } from "./routes/analytics";
 import { authRoutes } from "./routes/auth";
+import { feedbackRoutes } from "./routes/feedback";
 import { paymentsRoutes } from "./routes/payments";
 import { projectsRoutes } from "./routes/projects";
 import { trackingRoutes } from "./routes/tracking";
@@ -43,6 +44,7 @@ async function start() {
   await paymentsRoutes(fastify);
   await analyticsRoutes(fastify);
   await trackingRoutes(fastify);
+  await feedbackRoutes(fastify);
 
   // Register tunnel routes
   await tunnelSocket(fastify);
