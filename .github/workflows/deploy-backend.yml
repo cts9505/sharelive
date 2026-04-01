@@ -18,9 +18,6 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
-    defaults:
-      run:
-        working-directory: backend
 
     steps:
       - name: Checkout code
@@ -34,9 +31,11 @@ jobs:
           cache-dependency-path: backend/package-lock.json
 
       - name: Install dependencies
+        working-directory: backend
         run: npm ci
 
       - name: Build backend
+        working-directory: backend
         run: npm run build
 
       - name: Deploy to EC2
@@ -52,11 +51,10 @@ jobs:
           ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts
 
           # Create deployment package
-          cd backend
-          tar -czf ../backend.tar.gz dist package.json package-lock.json prisma
+          tar -czf backend.tar.gz -C backend dist package.json package-lock.json prisma
 
           # Copy to EC2
-          scp ../backend.tar.gz $EC2_USER@$EC2_HOST:/home/$EC2_USER/
+          scp backend.tar.gz $EC2_USER@$EC2_HOST:/home/$EC2_USER/
 
           # Deploy on EC2
           ssh $EC2_USER@$EC2_HOST << 'EOF'
