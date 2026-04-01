@@ -67,7 +67,7 @@ export async function tunnelSocket(fastify: FastifyInstance) {
     };
 
     // Listen for custom subdomain registration
-    conn.socket.on("message", (raw: any) => {
+    conn.socket.on("message", async (raw: any) => {
       const msgStr = raw.toString();
       let msg;
 
