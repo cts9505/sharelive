@@ -83,6 +83,13 @@ class TunnelManager {
     const reply = this.pending.get(requestId);
     if (!reply) return; // Request timed out or was already resolved
 
+    // 🐛 DEBUG: Log what we received
+    console.log(`[DEBUG] Resolving request ${requestId}:`);
+    console.log(`  Status: ${data.status}`);
+    console.log(`  Body exists: ${!!data.body}`);
+    console.log(`  Body length: ${data.body ? data.body.length : 0}`);
+    console.log(`  Headers:`, Object.keys(data.headers || {}));
+
     const headers = { ...(data.headers || {}) };
 
     // Remove problematic headers
@@ -100,6 +107,8 @@ class TunnelManager {
     const bodyBuffer = data.body
       ? Buffer.from(data.body, "base64")
       : Buffer.alloc(0);
+
+    console.log(`[DEBUG] Sending response: status=${data.status}, bodySize=${bodyBuffer.length}`);
 
     reply.code(data.status || 200).send(bodyBuffer);
 

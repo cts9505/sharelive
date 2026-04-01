@@ -123,7 +123,12 @@ export async function publicProxy(fastify: FastifyInstance) {
           headers: sanitizedHeaders,
           body: bodyBase64,
         }));
-        return;
+
+        // Don't send response yet - waiting for WebSocket reply
+        // Return promise that never resolves (reply will be sent via tunnelManager.resolvePending)
+        return new Promise(() => {
+          // This promise never resolves - reply is handled by WebSocket callback
+        });
       }
 
       const project = await prisma.project.findUnique({
