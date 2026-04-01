@@ -4,9 +4,11 @@ import crypto from "crypto";
 import { config } from "../config";
 import { tunnelManager } from "./tunnelManager";
 import { AuthService } from "../services/auth";
+import { ProjectService } from "../services/projects";
 
 export async function tunnelSocket(fastify: FastifyInstance) {
   const authService = new AuthService();
+  const projectService = new ProjectService();
 
   fastify.get("/tunnel", { websocket: true }, (conn) => {
 
@@ -26,14 +28,9 @@ export async function tunnelSocket(fastify: FastifyInstance) {
         return;
       }
 
-      if (config.REQUIRE_AUTH && !authenticated) {
-        conn.socket.send(JSON.stringify({
-          type: "error",
-          message: "Authentication is required before creating a tunnel."
-        }));
-        conn.socket.close();
-        return;
-      }
+      // Free tier: All tunnels are free (random or custom subdomains)
+      // - Custom subdomains are temporary and released when tunnel closes
+      // Paid tier (future): Reserved subdomains persist after tunnel closes
 
       const now = new Date();
       const expiresAt = config.MAX_TUNNEL_LIFETIME > 0
@@ -114,6 +111,9 @@ export async function tunnelSocket(fastify: FastifyInstance) {
       if (msg.type === "register" && !registered && msg.subdomain) {
         const customSubdomain = msg.subdomain.toLowerCase().trim();
 
+        // Free tier: Custom subdomains are allowed but temporary (released when tunnel closes)
+        // Paid tier: Reserved subdomains persist even after tunnel closes
+
         // Validate subdomain format (alphanumeric and hyphens only, 3-20 chars)
         if (!/^[a-z0-9-]{3,20}$/.test(customSubdomain)) {
           conn.socket.send(JSON.stringify({
@@ -124,7 +124,22 @@ export async function tunnelSocket(fastify: FastifyInstance) {
           return;
         }
 
-        // Check if subdomain is already taken
+        // Check if subdomain is reserved in the database
+        const reservedProject = await projectService.resolve(customSubdomain);
+        if (reservedProject) {
+          // Subdomain is reserved - check ownership
+          if (!authenticated || reservedProject.ownerId !== userId) {
+            conn.socket.send(JSON.stringify({
+              type: "error",
+              message: `Subdomain '${customSubdomain}' is reserved by another user. Please choose a different name.`
+            }));
+            conn.socket.close();
+            return;
+          }
+          // Authenticated user owns this reserved subdomain - allow connection
+        }
+
+        // Check if subdomain is currently in use by an active tunnel
         if (tunnelManager.get(customSubdomain)) {
           conn.socket.send(JSON.stringify({
             type: "error",
