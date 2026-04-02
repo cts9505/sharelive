@@ -153,8 +153,8 @@ const ContactPage = () => {
                 </div>
                 <div>
                   <h3 className="font-medium text-foreground">Address</h3>
-                  <p className="text-sm text-muted-foreground">Pradhikaran
-                    Pune 411044,<br /> Maharashtra, India
+                  <p className="text-sm text-muted-foreground">
+                    Pune, Maharashtra, India
                   </p>
                 </div>
               </div>

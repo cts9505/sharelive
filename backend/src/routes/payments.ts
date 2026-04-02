@@ -4,7 +4,7 @@ import crypto from "crypto";
 import { prisma } from "../db/prisma";
 import { config } from "../config";
 import { CouponError, CouponService } from "../services/coupon";
-import { authenticate, AuthenticatedRequest } from "./authenticate";
+import { authenticate } from "./authenticate";
 
 function isRazorpayAuthError(error: unknown) {
   if (!error || typeof error !== "object") {
@@ -45,13 +45,15 @@ const adminCouponSchema = z.object({
 
 export async function paymentsRoutes(fastify: FastifyInstance) {
   fastify.post("/api/payments/coupons/validate", { preHandler: authenticate }, async (request, reply) => {
+    if (!request.user) return reply.status(401).send({ error: "Unauthorized" });
+
     try {
       const { code, amount } = z.object({
         code: z.string().min(1),
         amount: z.number().int().positive(),
       }).parse(request.body);
 
-      const result = await CouponService.validateAndCalculate(code, amount, (request as AuthenticatedRequest).user.userId);
+      const result = await CouponService.validateAndCalculate(code, amount, request.user.userId);
       return reply.send(result);
     } catch (error: any) {
       if (error instanceof CouponError) {
@@ -72,6 +74,8 @@ export async function paymentsRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post("/api/payments/projects/:id/checkout", { preHandler: authenticate }, async (request, reply) => {
+    if (!request.user) return reply.status(401).send({ error: "Unauthorized" });
+
     const razorpay = await getRazorpayClient();
     if (!razorpay) {
       return reply.status(503).send({ error: "Payments not configured" });
@@ -93,7 +97,7 @@ export async function paymentsRoutes(fastify: FastifyInstance) {
         const coupon = await CouponService.validateAndCalculate(
           couponCode,
           originalAmount,
-          (request as AuthenticatedRequest).user.userId
+          request.user.userId
         );
         finalAmount = coupon.finalAmount;
         discount = coupon.discount;
@@ -108,7 +112,7 @@ export async function paymentsRoutes(fastify: FastifyInstance) {
         receipt,
         notes: {
           projectId: id,
-          userId: (request as AuthenticatedRequest).user.userId,
+          userId: request.user.userId,
           couponCode: couponCode || "none",
           originalAmount: originalAmount.toString(),
           discount: discount.toString(),
@@ -120,7 +124,7 @@ export async function paymentsRoutes(fastify: FastifyInstance) {
         where: { razorpayOrderId: order.id },
         update: {},
         create: {
-          userId: (request as AuthenticatedRequest).user.userId,
+          userId: request.user.userId,
           razorpayOrderId: order.id,
           amount: finalAmount,
           currency: order.currency || "INR",
@@ -158,6 +162,8 @@ export async function paymentsRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post("/api/payments/verify-payment", { preHandler: authenticate }, async (request, reply) => {
+    if (!request.user) return reply.status(401).send({ error: "Unauthorized" });
+
     const razorpay = await getRazorpayClient();
     if (!razorpay || !config.RAZORPAY_KEY_SECRET) {
       return reply.status(503).send({ error: "Payments not configured" });
@@ -214,7 +220,7 @@ export async function paymentsRoutes(fastify: FastifyInstance) {
           completedAt: new Date(),
         },
         create: {
-          userId: (request as AuthenticatedRequest).user.userId,
+          userId: request.user.userId,
           razorpayOrderId: orderId,
           razorpayPaymentId: paymentId,
           razorpaySignature: signature,
@@ -236,7 +242,7 @@ export async function paymentsRoutes(fastify: FastifyInstance) {
       });
 
       if (couponId && couponId !== "none") {
-        await CouponService.recordUsage(couponId, (request as AuthenticatedRequest).user.userId, orderId, discountAmount);
+        await CouponService.recordUsage(couponId, request.user.userId, orderId, discountAmount);
       }
 
       return reply.send({
@@ -267,11 +273,12 @@ export async function paymentsRoutes(fastify: FastifyInstance) {
   });
 
   fastify.get("/api/payments/project/:projectId", { preHandler: authenticate }, async (request, reply) => {
+    if (!request.user) return reply.status(401).send({ error: "Unauthorized" });
+
     const { projectId } = request.params as { projectId: string };
-    const userId = (request as AuthenticatedRequest).user.userId;
 
     const project = await prisma.project.findFirst({
-      where: { id: projectId, ownerId: userId },
+      where: { id: projectId, ownerId: request.user.userId },
       select: { id: true },
     });
 

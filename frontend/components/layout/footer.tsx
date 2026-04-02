@@ -83,7 +83,7 @@ export const Footer = () => {
             <div className="space-y-2 text-sm text-muted-foreground">
               <div className="flex items-start gap-2">
                 <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
-                <span> Pradhikaran, Pune 411044, Maharashtra</span>
+                <span>Pune, India</span>
               </div>
               <Link href="tel:9373954169" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
                 <Phone className="h-4 w-4 text-primary" /> 93739 54169
@@ -125,17 +125,28 @@ export const Footer = () => {
             <p className="text-sm text-muted-foreground">
               Subscribe to occasional updates about new ShareLive features, tips, and launch announcements.
             </p>
-            <form className="flex flex-col gap-3 sm:flex-row">
+            <form onSubmit={handleSubscribe} className="flex flex-col gap-3 sm:flex-row">
               <input
                 type="email"
                 placeholder="you@example.com"
-                className="w-full rounded-lg border border-border bg-background px-4 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
               />
               <button
                 type="submit"
-                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+                disabled={isLoading}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                Notify me
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Sending...</span>
+                  </>
+                ) : (
+                  'Notify me'
+                )}
               </button>
             </form>
             <p className="text-xs text-muted-foreground/80">
@@ -145,7 +156,7 @@ export const Footer = () => {
         </div>
 
         <div className="flex flex-col gap-4 border-t border-border pt-6 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between">
-          <p>© {new Date().getFullYear()} Chaitanya Tukaram Shinde. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Chaitanya Shinde. All rights reserved.</p>
           <p>Built in Pune, India • Powered by ShareLive</p>
         </div>
       </div>

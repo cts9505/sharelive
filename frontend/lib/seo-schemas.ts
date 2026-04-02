@@ -12,10 +12,8 @@ export const organizationSchema = {
   },
   address: {
     '@type': 'PostalAddress',
-    streetAddress: 'Nav Shanti Niketan Housing Society, Plot C-39, Sector 29, Pradhikaran',
     addressLocality: 'Pune',
     addressRegion: 'Maharashtra',
-    postalCode: '411044',
     addressCountry: 'IN',
   },
   contactPoint: {

@@ -66,7 +66,7 @@ const sections = [
       'If you have any questions about cancellations or refunds, please contact us:',
       'Email: 9chaitanyashinde@gmail.com',
       'Phone: 93739 54169',
-      'Address: Nav Shanti Niketan Housing Society, Plot C-39, Sector 29, Pradhikaran, Pune 411044, Maharashtra',
+      'Address: Pune, Maharashtra, India',
     ],
   },
   {

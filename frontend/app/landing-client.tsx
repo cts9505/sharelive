@@ -43,11 +43,6 @@ const shareLiveSections = [
             code: 'npm install -g sharelive\nsharelive --port 3000',
             helper: 'Good if you want the sharelive command available everywhere on your machine.',
           },
-          {
-            label: 'pnpm',
-            code: 'pnpm dlx sharelive --port 3000',
-            helper: 'Great if your workflow already revolves around pnpm.',
-          },
         ]}
         className="max-w-3xl"
       />

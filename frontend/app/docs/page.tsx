@@ -140,11 +140,6 @@ export default function DocsPage() {
                       code: 'npm install -g sharelive\nsharelive --port 3000',
                       helper: 'Great when you want the sharelive command available globally.',
                     },
-                    {
-                      label: 'pnpm',
-                      code: 'pnpm dlx sharelive --port 3000',
-                      helper: 'Clean option if your local workflow already uses pnpm heavily.',
-                    },
                   ]}
                 />
               </div>
